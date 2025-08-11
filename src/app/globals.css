@@ -24,3 +24,25 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Darker placeholder styling for all inputs and textareas */
+::placeholder {
+  color: #475569 !important; /* Tailwind slate-600 */
+  opacity: 1; /* Firefox requires this */
+}
+
+/* For webkit browsers (Chrome, Safari, Edge) */
+::-webkit-input-placeholder {
+  color: #475569 !important; /* Tailwind slate-600 */
+}
+
+/* For Firefox */
+::-moz-placeholder {
+  color: #475569 !important; /* Tailwind slate-600 */
+  opacity: 1;
+}
+
+/* For Edge */
+::-ms-input-placeholder {
+  color: #475569 !important; /* Tailwind slate-600 */
+}
