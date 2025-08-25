@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Key, Webhook, MessageSquare, Activity } from 'lucide-react';
+import { Key, Webhook, MessageSquare, Activity, Coins } from 'lucide-react';
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -191,6 +191,23 @@ export default function Dashboard() {
                   <h3 className="text-lg font-medium">Send WhatsApp</h3>
                   <p className="mt-2 text-sm text-gray-500">
                     Send WhatsApp messages to your contacts
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => router.push('/dashboard/credits')}
+                className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+              >
+                <div>
+                  <span className="rounded-lg inline-flex p-3 bg-yellow-50 text-yellow-700 ring-4 ring-white">
+                    <Coins className="h-6 w-6" />
+                  </span>
+                </div>
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium">Top-up Credits</h3>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Purchase credits for API usage
                   </p>
                 </div>
               </button>

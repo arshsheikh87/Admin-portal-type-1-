@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import connectDB from '@/lib/mongodb';
-import ApiKey from '@/models/ApiKey';
-import User from '@/models/User';
+// import connectDB from 'src/lib/mongodb';
+import connectDB from '../../../lib/mongodb';
+
+import User from '../../../models/User';
+// import { checkAndConsumeCredit } from '../../lib/credits';
 import { authOptions } from '../auth/[...nextauth]/route';
+import ApiKey from '@/models/ApiKey';
 
 // GET - Fetch all API keys for the authenticated user
 export async function GET() {
@@ -83,19 +86,32 @@ export async function POST(request) {
       console.log('User found:', user._id);
     }
 
+    // Check and consume credits before generating API key
+    const creditCheck = await checkAndConsumeCredit(user._id, 1);
+    
+    if (!creditCheck.success) {
+      console.log('Insufficient credits for user:', user._id);
+      return NextResponse.json({ 
+        error: creditCheck.message,
+        remainingCredits: creditCheck.remainingCredits 
+      }, { status: 402 }); // 402 Payment Required
+    }
+
     const body = await request.json();
     const { name = 'API Key' } = body;
     console.log('Creating API key with name:', name);
     
     const apiKey = await ApiKey.createForUser(user._id, name);
     console.log('API key created successfully:', apiKey._id);
+    console.log('Credits consumed. Remaining:', creditCheck.remainingCredits);
     
     const response = {
       _id: apiKey._id,
       key: apiKey.key,
       name: apiKey.name,
       createdAt: apiKey.createdAt,
-      isActive: apiKey.isActive
+      isActive: apiKey.isActive,
+      remainingCredits: creditCheck.remainingCredits
     };
     
     console.log('Returning API key response');

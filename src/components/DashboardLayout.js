@@ -27,6 +27,7 @@ export default function DashboardLayout({ children, activeTab = 'dashboard' }) {
     { name: 'API Keys', href: '/dashboard/apikey', icon: Key, active: activeTab === 'apikey' },
     { name: 'Webhooks', href: '/dashboard/webhooks', icon: Webhook, active: activeTab === 'webhooks' },
     { name: 'WhatsApp', href: '/dashboard/whatsapp', icon: MessageSquare, active: activeTab === 'whatsapp' },
+    { name: 'Credits', href: '/dashboard/credits', icon: Coins, active: activeTab === 'credits' },
   ];
 
   // Fetch user credits

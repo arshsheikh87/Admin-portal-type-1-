@@ -19,10 +19,10 @@ export const authOptions = {
       if (account.provider === 'google') {
         try {
           await connectDB();
-          
+
           // Check if user already exists
           const existingUser = await User.findOne({ email: user.email });
-          
+
           if (!existingUser) {
             // Create new user with default credits
             const newUser = new User({
@@ -30,11 +30,11 @@ export const authOptions = {
               name: user.name,
               credits: 10, // Default credits for new users
             });
-            
+
             await newUser.save();
             console.log('New user created with 10 credits:', user.email);
           }
-          
+
           return true;
         } catch (error) {
           console.error('Error in signIn callback:', error);
