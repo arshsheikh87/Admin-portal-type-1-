@@ -45,7 +45,8 @@ export const authOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
-        token.userId = user.id;
+        // Store the MongoDB ObjectId as string in the token
+        token.userId = user._id ? user._id.toString() : user.id;
       }
       return token;
     },
