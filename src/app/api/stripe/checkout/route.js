@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { stripe } from '../../../../lib/stripe';
-import connectDB from '../../../../lib/mongodb';
-import User from '../../../../models/User';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import connectDB from '@/lib/mongodb';
+import User from '@/models/User';
+import { stripe } from '@/lib/stripe';
+import { auth } from '../../auth/[...nextauth]/route';
 
 export async function POST(request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

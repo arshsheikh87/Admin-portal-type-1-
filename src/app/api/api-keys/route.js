@@ -1,19 +1,16 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-// import connectDB from 'src/lib/mongodb';
-import connectDB from '../../../lib/mongodb';
-
-import User from '../../../models/User';
-// import { checkAndConsumeCredit } from '../../lib/credits';
-import { authOptions } from '../auth/[...nextauth]/route';
+import connectDB from '@/lib/mongodb';
 import ApiKey from '@/models/ApiKey';
+import User from '@/models/User';
+import { checkAndConsumeCredit } from '@/lib/credits';
+import { auth } from '../auth/[...nextauth]/route';
 
 // GET - Fetch all API keys for the authenticated user
 export async function GET() {
   try {
     console.log('GET /api/api-keys - Fetching API keys');
     
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     console.log('Session:', session ? 'Found' : 'Not found');
     
     if (!session) {
@@ -59,7 +56,7 @@ export async function POST(request) {
   try {
     console.log('POST /api/api-keys - Starting API key generation');
     
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     console.log('Session:', session ? 'Found' : 'Not found');
     
     if (!session) {

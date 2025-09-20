@@ -16,7 +16,7 @@ const clients = new Map();
 const connectionStatuses = new Map();
 
 const onWhatsappMessage = async () => {
-
+     
 }
 
 class WhatsAppService {
@@ -26,23 +26,31 @@ class WhatsAppService {
 
     async initialize() {
         if (this.isInitialized) {
+            console.log('WhatsApp service already initialized, skipping');
             return;
         }
 
         try {
+            console.log('🔧 Step 1: Initializing Redis event system...');
             // Initialize Redis event system
             await redisEventSystem.initialize();
+            console.log('✅ Redis event system initialized');
 
+            console.log('🔧 Step 2: Initializing event listeners...');
             // Initialize event listeners after Redis is ready
             this.initializeEventListeners();
+            console.log('✅ Event listeners initialized');
 
+            console.log('🔧 Step 3: Restoring existing connections...');
             // Restore existing active connections
             await this.restoreExistingConnections();
+            console.log('✅ Existing connections restored');
 
             this.isInitialized = true;
-            console.log('WhatsApp service initialized with Redis');
+            console.log('🎉 WhatsApp service initialized with Redis');
         } catch (error) {
-            console.error('Failed to initialize WhatsApp service:', error);
+            console.error('❌ Failed to initialize WhatsApp service:', error);
+            console.error('Error stack:', error.stack);
             throw error;
         }
     }
@@ -419,26 +427,60 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
     async function startService() {
         try {
+            console.log('Step 1: Checking environment variables...');
+            console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
+            console.log('REDIS_URL:', process.env.REDIS_URL ? 'Set' : 'Not set');
 
-            console.log(process.env.REDIS_URL)
-            // Connect to MongoDB
-            await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/whatsapp-admin');
-            console.log('Connected to MongoDB');
+            console.log('Step 2: Connecting to MongoDB...');
+            // Connect to MongoDB with better error handling
+            try {
+                const mongoOptions = {
+                    serverSelectionTimeoutMS: 10000, // 10 second timeout
+                    socketTimeoutMS: 45000, // 45 second timeout
+                    connectTimeoutMS: 10000, // 10 second timeout
+                    maxPoolSize: 10,
+                    retryWrites: true,
+                    w: 'majority'
+                };
+                
+                console.log('🔧 Attempting MongoDB connection with options:', mongoOptions);
+                await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/whatsapp-admin', mongoOptions);
+                console.log('✅ Connected to MongoDB');
+            } catch (mongoError) {
+                console.error('❌ MongoDB connection failed:', mongoError.message);
+                console.error('❌ MongoDB error details:', {
+                    name: mongoError.name,
+                    code: mongoError.code,
+                    codeName: mongoError.codeName
+                });
+                throw mongoError;
+            }
 
+            console.log('Step 3: Initializing WhatsApp service...');
             // Initialize the service
             await whatsAppService.initialize();
-            console.log('WhatsApp service is running...');
+            console.log('✅ WhatsApp service is running...');
 
+            console.log('Step 4: Setting up health checks...');
             // Set up periodic health checks
             setInterval(async () => {
-                const health = await whatsAppService.healthCheck();
-                if (health.status === 'unhealthy') {
-                    console.warn('Service health check failed:', health);
+                try {
+                    const health = await whatsAppService.healthCheck();
+                    if (health.status === 'unhealthy') {
+                        console.warn('Service health check failed:', health);
+                    } else {
+                        console.log('Service health check passed:', health.status);
+                    }
+                } catch (error) {
+                    console.error('Health check error:', error);
                 }
             }, 30000); // Every 30 seconds
 
+            console.log('🎉 WhatsApp service started successfully!');
+
         } catch (error) {
-            console.error('Failed to start WhatsApp service:', error);
+            console.error('❌ Failed to start WhatsApp service:', error);
+            console.error('Error stack:', error.stack);
             process.exit(1);
         }
     }
