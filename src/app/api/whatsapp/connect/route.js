@@ -1,47 +1,60 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import WhatsAppConnection from '@/models/WhatsAppConnection';
-import redisEventSystem from '@/lib/redisEvents';
-import User from '@/models/User';
+import { auth } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
+import WhatsAppConnection from '@/models/WhatsAppConnection';
+import User from '@/models/User';
+import redisEventSystem from '@/lib/redisEvents';
 
 export async function POST(request) {
     try {
+        console.log('🚀 Starting WhatsApp connection request...');
+
+        console.log('📊 Connecting to MongoDB...');
         await connectDB();
+        console.log('✅ MongoDB connected');
 
         // Initialize Redis event system if not already initialized
+        console.log('📊 Initializing Redis event system...');
         if (!redisEventSystem.isInitialized) {
             await redisEventSystem.initialize();
         }
+        console.log('✅ Redis event system ready');
 
         // Get user session
-        const session = await getServerSession(authOptions);
+        console.log('📊 Getting user session...');
+        const session = await auth();
         if (!session || !session.user) {
+            console.log('❌ No session found');
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
             );
         }
+        console.log('✅ Session found for user:', session.user.email);
 
         // Get the user document to ensure we have the correct MongoDB ObjectId
+        console.log('📊 Finding user in database...');
         const user = await User.findOne({ email: session.user.email });
         if (!user) {
+            console.log('❌ User not found in database');
             return NextResponse.json(
                 { error: 'User not found' },
                 { status: 404 }
             );
         }
+        console.log('✅ User found:', user._id);
 
         const userId = user._id;
 
         // Check if user already has an active connection
+        console.log('📊 Checking for existing connections...');
         const existingConnection = await WhatsAppConnection.findOne({
             userId,
             status: { $in: ['connecting', 'qr_ready', 'connected'] }
         });
 
         if (existingConnection) {
+            console.log('✅ Existing connection found:', existingConnection.status);
             return NextResponse.json({
                 status: existingConnection.status,
                 connectionId: existingConnection.connectionId,
@@ -49,6 +62,8 @@ export async function POST(request) {
                 message: 'Connection already exists'
             });
         }
+
+        console.log('📊 No existing connection, creating new one...');
 
         // Create new connection request
         const connection = new WhatsAppConnection({
@@ -61,11 +76,16 @@ export async function POST(request) {
             }
         });
 
+        console.log('📊 Saving connection to database...');
         await connection.save();
+        console.log('✅ Connection saved with ID:', connection.connectionId);
 
         // Trigger WhatsApp connection initialization via Redis
+        console.log('📊 Emitting WhatsApp connect event via Redis...');
         await redisEventSystem.emitWhatsAppConnect(userId, connection.connectionId);
+        console.log('✅ Redis event emitted successfully');
 
+        console.log('🎉 WhatsApp connection request completed successfully');
         return NextResponse.json({
             status: 'initializing',
             connectionId: connection.connectionId,
@@ -73,9 +93,34 @@ export async function POST(request) {
         });
 
     } catch (error) {
-        console.error('Error creating WhatsApp connection request:', error);
+        console.error('❌ Error creating WhatsApp connection request:', error);
+        console.error('❌ Error stack:', error.stack);
+        console.error('❌ Error details:', {
+            name: error.name,
+            message: error.message,
+            code: error.code,
+            step: 'unknown'
+        });
+
+        // Try to identify which step failed
+        let failedStep = 'unknown';
+        if (error.message.includes('MongoDB') || error.message.includes('mongoose')) {
+            failedStep = 'database_connection';
+        } else if (error.message.includes('Redis') || error.message.includes('redis')) {
+            failedStep = 'redis_connection';
+        } else if (error.message.includes('session') || error.message.includes('auth')) {
+            failedStep = 'authentication';
+        } else if (error.message.includes('User not found')) {
+            failedStep = 'user_lookup';
+        }
+
         return NextResponse.json(
-            { error: 'Failed to create connection request' },
+            {
+                error: 'Failed to create connection request',
+                details: error.message,
+                failedStep,
+                timestamp: new Date().toISOString()
+            },
             { status: 500 }
         );
     }
@@ -86,7 +131,7 @@ export async function GET(request) {
         await connectDB();
 
         // Get user session
-        const session = await getServerSession(authOptions);
+        const session = await auth();
         if (!session || !session.user) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
@@ -143,7 +188,7 @@ export async function DELETE(request) {
         }
 
         // Get user session
-        const session = await getServerSession(authOptions);
+        const session = await auth();
         if (!session || !session.user) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
@@ -151,7 +196,16 @@ export async function DELETE(request) {
             );
         }
 
-        const userId = session.user.id;
+        // Get the user document to ensure we have the correct MongoDB ObjectId
+        const user = await User.findOne({ email: session.user.email });
+        if (!user) {
+            return NextResponse.json(
+                { error: 'User not found' },
+                { status: 404 }
+            );
+        }
+
+        const userId = user._id;
 
         // Trigger WhatsApp disconnect via Redis
         await redisEventSystem.emitWhatsAppDisconnect(userId);

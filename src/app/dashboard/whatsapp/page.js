@@ -49,24 +49,30 @@ export default function WhatsAppPage() {
 
   const checkWhatsAppStatus = async () => {
     try {
+      console.log('🔍 Checking WhatsApp status...');
       const response = await fetch('/api/whatsapp/connect');
       const data = await response.json();
 
-      console.log('WhatsApp status response:', data);
+      console.log('📡 WhatsApp status response:', data);
+      console.log('📊 Current status:', data.status);
+      console.log('🔗 QR Code present:', !!data.qrCode);
+      
       setWhatsappStatus(data.status);
 
       if (data.qrCode && data.qrCode !== qrCodeData) {
+        console.log('🎯 New QR code received, generating image...');
         setQrCodeData(data.qrCode);
         generateQRCode(data.qrCode);
       }
 
       if (data.status === 'connected') {
+        console.log('✅ WhatsApp connected successfully');
         setConnecting(false);
         setQrCodeData(null);
         setQrCodeImage(null);
       }
     } catch (error) {
-      console.error('Error checking WhatsApp status:', error);
+      console.error('❌ Error checking WhatsApp status:', error);
       // Set status to disconnected on error
       setWhatsappStatus('disconnected');
     }

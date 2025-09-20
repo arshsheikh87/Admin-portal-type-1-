@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -15,17 +15,20 @@
     "redis:health": "node -e \"import('./redis.js').then(r => r.healthCheck().then(console.log)).catch(console.error)\""
   },
   "dependencies": {
+    "@auth/core": "^0.40.0",
+    "@stripe/stripe-js": "^7.8.0",
     "dotenv": "^17.2.1",
     "lucide-react": "^0.536.0",
     "mongoose": "^8.17.0",
     "nanoid": "^5.1.5",
     "next": "15.4.5",
-    "next-auth": "^4.24.11",
+    "next-auth": "^5.0.0-beta.29",
     "qrcode": "^1.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "redis": "^4.7.1",
     "request": "^2.88.2",
+    "stripe": "^18.4.0",
     "whatsapp-web.js": "^1.32.0"
   },
   "devDependencies": {

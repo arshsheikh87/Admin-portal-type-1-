@@ -13,29 +13,39 @@ class RedisEventSystem {
         }
 
         try {
+            console.log('🔧 Redis Event System: Step 1 - Checking Redis connection status...');
             // Check if Redis is already connected
             if (getConnectionStatus()) {
-                console.log('Redis already connected, marking event system as initialized');
+                console.log('✅ Redis already connected, marking event system as initialized');
                 this.isInitialized = true;
                 // Start health monitoring
+                console.log('🔧 Redis Event System: Starting health monitoring...');
                 await this.startHealthMonitoring();
+                console.log('✅ Redis Event System: Health monitoring started');
                 return;
             }
 
+            console.log('🔧 Redis Event System: Step 2 - Connecting to Redis...');
             await connect();
+            console.log('✅ Redis Event System: Connected to Redis');
+            
             this.isInitialized = true;
-            console.log('Redis event system initialized');
+            console.log('✅ Redis event system initialized');
 
             // Start health monitoring
+            console.log('🔧 Redis Event System: Starting health monitoring...');
             await this.startHealthMonitoring();
+            console.log('✅ Redis Event System: Health monitoring started');
         } catch (error) {
-            console.error('Failed to initialize Redis event system:', error);
+            console.error('❌ Failed to initialize Redis event system:', error);
             // Don't throw error if Redis is already connected
             if (getConnectionStatus()) {
                 this.isInitialized = true;
-                console.log('Redis event system marked as initialized (Redis was already connected)');
+                console.log('✅ Redis event system marked as initialized (Redis was already connected)');
                 // Start health monitoring
+                console.log('🔧 Redis Event System: Starting health monitoring...');
                 await this.startHealthMonitoring();
+                console.log('✅ Redis Event System: Health monitoring started');
                 return;
             }
             throw error;

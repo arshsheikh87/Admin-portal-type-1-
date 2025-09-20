@@ -1,23 +1,18 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { healthCheck as redisHealthCheck } from '../../../../redis.js';
+import { auth } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
+import { healthCheck as redisHealthCheck } from '../../../../redis.js';
 
-export async function GET(request) {
+export async function GET() {
     try {
-        // Check if user is authenticated (optional for health checks)
-        let isAuthenticated = false;
-        let user = null;
-
-        try {
-            const session = await getServerSession(authOptions);
-            if (session && session.user) {
-                isAuthenticated = true;
-                user = session.user;
-            }
-        } catch (authError) {
-            // Auth check failed, continue with basic health check
+        // Check authentication
+        const session = await auth();
+        
+        if (!session) {
+            return NextResponse.json({ 
+                error: 'Not authenticated',
+                message: 'Please log in first'
+            }, { status: 401 });
         }
 
         // Basic health checks
@@ -79,8 +74,8 @@ export async function GET(request) {
 
         // Authentication status
         healthChecks.checks.authentication = {
-            status: isAuthenticated ? 'authenticated' : 'unauthenticated',
-            user: isAuthenticated ? { email: user.email, id: user.id } : null
+            status: session.user ? 'authenticated' : 'unauthenticated',
+            user: session.user ? { email: session.user.email, id: session.user.id } : null
         };
 
         // Determine overall status

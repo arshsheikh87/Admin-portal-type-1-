@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import Message from '@/models/Message';
-import User from '@/models/User';
+import { auth } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
+import WhatsAppConnection from '@/models/WhatsAppConnection';
+import User from '@/models/User';
+import { checkAndConsumeCredit } from '@/lib/credits';
+import Message from '@/models/Message';
 import whatsAppService from '../../../../../whatsapp';
 
 export async function POST(request) {
@@ -11,8 +12,8 @@ export async function POST(request) {
         await connectDB();
 
         // Get user session
-        const session = await getServerSession(authOptions);
-        if (!session || !session.user) {
+        const session = await auth();
+        if (!session) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }

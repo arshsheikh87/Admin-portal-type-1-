@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { auth } from '../auth/[...nextauth]/route';
 
 export async function GET() {
   try {
@@ -11,14 +10,11 @@ export async function GET() {
     await connectDB();
     console.log('Database connected successfully');
     
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     console.log('Session:', session ? 'Found' : 'Not found');
     
     if (!session) {
-      return NextResponse.json({ 
-        error: 'No session found',
-        message: 'Please log in first'
-      }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     console.log('Looking for user with email:', session.user.email);

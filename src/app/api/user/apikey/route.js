@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
 import ApiKey from '@/models/ApiKey';
-import { checkAndConsumeCredit } from '@/lib/credits';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import User from '@/models/User';
+import { auth } from '../../auth/[...nextauth]/route';
 
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -48,7 +46,7 @@ export async function POST() {
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
